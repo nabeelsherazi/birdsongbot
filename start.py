@@ -1,7 +1,7 @@
 import tweepy, json
 import os, time, authkeys
 import indicoio
-import pygame, musicpicker
+import pygame, musicpicker, syllables
 
 # Reject mode announces people who didn't write a haiku correctly.
 rejected_mode = True
@@ -19,7 +19,7 @@ auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
 # Init pygame, which will handle playing music
-pygame.mixer.pre_init(44100,-16,2,2048)
+pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.mixer.init()
 
 
@@ -30,38 +30,27 @@ class StdOutListener(tweepy.StreamListener):
         # Twitter returns data in JSON format - we need to decode it first
         decoded = json.loads(data)
 
-        tweetJava = decoded['text'].replace("@birdsongbot","")
-        tweetString= decoded['text'].replace("@birdsongbot","").replace("\n","")
-        tweetName = decoded['user']['screen_name']
-        javaInputFile = open("data/input.txt", "w")
+        tweet_haiku = decoded['text'].replace("@birdsongbot","").lstrip()
+        tweet_string = decoded['text'].replace("@birdsongbot","").replace("\n","")
+        tweet_name = decoded['user']['screen_name']
 
-        #various java things happen here
-        javaInputFile.write(tweetJava)
-        javaInputFile.close()
+        # Syllable checking is gonna happen right here
+        # Syllable module checks if haiku is really a haiku, we're gonna play error sound if not
 
-        os.system("java -jar SyllableCount.jar")
-        # tell python to run the java program right here
-        # java program checks if haiku is really a haiku, we're gonna play error sound if not
+        is_haiku = syllables.is_haiku(tweet_haiku)
+        print(tweet_haiku)
 
-        javaOutputFile = open("data/output.txt", "r")
-        is_haiku = javaOutputFile.readlines()
-        is_haiku = is_haiku[0]
-        is_haiku = is_haiku.replace('\n', '')
-        print(is_haiku)
-        if is_haiku != "true":
-
-            #this code executes if rejected_mode is True
-            if rejected_mode:
-                os.system("say 'Submitted by user '{0}".format(tweetName))
-                pygame.mixer.music.load("sounds/ErrorSound.mp3")
-                pygame.mixer.music.play()
-                os.system("say 'That is not a haiku my friend.'")
+        if is_haiku is False and rejected_mode is True:
+            os.system("say 'Submitted by user '{0}".format(tweetName))
+            pygame.mixer.music.load("sounds/ErrorSound.mp3")
+            pygame.mixer.music.play()
+            os.system("say 'That is not a haiku my friend.'")
 
         else:
-            #do the stuff to make it say that its not a haiku
-            #write code here to make it go back to listening immediately
+            # Do the stuff to make it say that its not a haiku
+            # Write code here to make it go back to listening immediately
 
-            #Introduction to haiku
+            # Introduction to haiku
             pygame.mixer.music.load("sounds/IntroSound1.mp3")
             pygame.mixer.music.play()
             time.sleep(1.2)
@@ -69,18 +58,18 @@ class StdOutListener(tweepy.StreamListener):
 
 
 
-            #assuming everything is good
-            #split tweet into an array
-            tweetTextArray = decoded['text'].replace("@birdsongbot","").split('\n')
+            # Assuming everything is good
+            # Split tweet into an array
+            tweet_text_array = decoded['text'].replace("@birdsongbot","").split('\n')
 
-            #INDICO SENTIMENT JAZZ
-            sentimentVal1 = indicoio.sentiment(tweetTextArray[0])
+            # INDICO SENTIMENT JAZZ
+            sentimentVal1 = indicoio.sentiment(tweet_text_array[0])
             sentimentVal1 = int(sentimentVal1 * 5)
 
-            sentimentVal2 = indicoio.sentiment(tweetTextArray[1])
+            sentimentVal2 = indicoio.sentiment(tweet_text_array[1])
             sentimentVal2 = int(sentimentVal2 * 5)
 
-            sentimentVal3 = indicoio.sentiment(tweetTextArray[2])
+            sentimentVal3 = indicoio.sentiment(tweet_text_array[2])
             sentimentVal3 = int(sentimentVal3 * 5)
 
             fileNames = musicpicker.get_music_names(sentimentVal1, sentimentVal2, sentimentVal3)
@@ -92,8 +81,8 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.play()
 
             #Reading Haiku line 1 with macs sweet sweet voice
-            os.system("say {0}".format(tweetTextArray[0]))
-            print('')
+            os.system("say {0}".format(tweet_text_array[0]))
+            print()
 
             time.sleep(1)
 
@@ -102,8 +91,8 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.play()
 
             #Reading Haiku line 2 with macs sweet sweet voice
-            os.system("say {0}".format(tweetTextArray[1]))
-            print('')
+            os.system("say {0}".format(tweet_text_array[1]))
+            print()
 
             time.sleep(1)
 
@@ -112,8 +101,8 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.play()
 
             #Reading Haiku line 3 with macs sweet sweet voice
-            os.system("say {0}".format(tweetTextArray[2]))
-            print('')
+            os.system("say {0}".format(tweet_text_array[2]))
+            print()
             time.sleep(3)
 
 

@@ -5,4 +5,4 @@ consumer_key = #twitter consumer_key
 consumer_secret = #twitter consumer secret
 access_token = #twitter access token
 access_token_secret = #twitter access token
-indicoio.config.api_key = #indicoio key
+indico.api_key = #indicoio key

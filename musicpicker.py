@@ -26,7 +26,7 @@ if __name__ == "__main__":
 	input()
 
 def get_intro():
-    introSound = ['IntroSound1','IntroSound2','IntroSound3']
-    choice = random.Random().randint(0,2)
+    introSound = ['IntroSound1', 'IntroSound2', 'IntroSound3']
+    choice = random.Random().randint(0, 2)
     introSound[choice]
     return introSound[choice]
