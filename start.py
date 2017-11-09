@@ -1,5 +1,6 @@
 import tweepy, json
 import os, time, authkeys
+import sys
 import indicoio
 import pygame, musicpicker, syllables
 
@@ -22,6 +23,12 @@ api = tweepy.API(auth)
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.mixer.init()
 
+# Get what system we're on to determine how to handle TTS
+current_system = sys.platform
+
+
+speak_command = {"win32": "powershell tts\\.\\speak.ps1 '{}'", "darwin": "say '{}'", "linux": "say '{}'"}
+
 
 # This is the listener, resposible for receiving data
 class StdOutListener(tweepy.StreamListener):
@@ -31,7 +38,6 @@ class StdOutListener(tweepy.StreamListener):
         decoded = json.loads(data)
 
         tweet_haiku = decoded['text'].replace("@birdsongbot","").lstrip()
-        tweet_string = decoded['text'].replace("@birdsongbot","").replace("\n","")
         tweet_name = decoded['user']['screen_name']
 
         # Syllable checking is gonna happen right here
@@ -41,10 +47,10 @@ class StdOutListener(tweepy.StreamListener):
         print(tweet_haiku)
 
         if is_haiku is False and rejected_mode is True:
-            os.system("say 'Submitted by user '{0}".format(tweetName))
+            os.system(speak_command[current_system].format("Submitted by user " + tweet_name))
             pygame.mixer.music.load("sounds/ErrorSound.mp3")
             pygame.mixer.music.play()
-            os.system("say 'That is not a haiku my friend.'")
+            os.system(speak_command[current_system].format("That is not a haiku my friend"))
 
         else:
             # Do the stuff to make it say that its not a haiku
@@ -54,13 +60,13 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.load("sounds/IntroSound1.mp3")
             pygame.mixer.music.play()
             time.sleep(1.2)
-            os.system("say 'Submitted by user '{0}".format(tweetName))
+            os.system(speak_command[current_system].format("Submitted by user " + tweet_name))
 
 
 
             # Assuming everything is good
             # Split tweet into an array
-            tweet_text_array = decoded['text'].replace("@birdsongbot","").split('\n')
+            tweet_text_array = decoded['text'].replace("@birdsongbot","").replace("\"", "").replace("\'", "").split('\n')
 
             # INDICO SENTIMENT JAZZ
             sentimentVal1 = indicoio.sentiment(tweet_text_array[0])
@@ -81,7 +87,7 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.play()
 
             #Reading Haiku line 1 with macs sweet sweet voice
-            os.system("say {0}".format(tweet_text_array[0]))
+            os.system(speak_command[current_system].format(tweet_text_array[0]))
             print()
 
             time.sleep(1)
@@ -91,7 +97,7 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.play()
 
             #Reading Haiku line 2 with macs sweet sweet voice
-            os.system("say {0}".format(tweet_text_array[1]))
+            os.system(speak_command[current_system].format(tweet_text_array[1]))
             print()
 
             time.sleep(1)
@@ -101,12 +107,9 @@ class StdOutListener(tweepy.StreamListener):
             pygame.mixer.music.play()
 
             #Reading Haiku line 3 with macs sweet sweet voice
-            os.system("say {0}".format(tweet_text_array[2]))
+            os.system(speak_command[current_system].format(tweet_text_array[2]))
             print()
             time.sleep(3)
-
-
-
 
         return True
 
