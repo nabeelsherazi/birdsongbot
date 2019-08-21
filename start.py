@@ -1,28 +1,30 @@
 import tweepy
 import json
-import os
 import time
 import sys
 import indicoio
 import pygame
-from helpers import musicpicker
-from helpers import syllables
+import pyttsx3
+import signal
+from subprocess import Popen, PIPE
+from helpers import musicpicker, syllables
 import configparser
 
 config = configparser.ConfigParser()
 config.read("config.ini")
+config = config["DEFAULT"]
 
 try:
     # Program settings
-    rejected_mode = config["DEFAULT"].getboolean("REJECTED_MODE")
+    rejected_mode = config.getboolean("REJECTED_MODE")
     bot_username = config["TWITTER_USERNAME"]
-    filter_bad_words = config["DEFAULT"].getboolean("FILTER_BAD_WORDS")
+    filter_bad_words = config.getboolean("FILTER_BAD_WORDS")
 
     # Authentication details for twitter and indicoio
     consumer_key = config["TWITTER_CONSUMER_KEY"]
     consumer_secret = config["TWITTER_CONSUMER_SECRET"]
     access_token = config["TWITTER_ACCESS_TOKEN"]
-    access_token_secret = config["TWITTER_TOKEN_SECRET"]
+    access_token_secret = config["TWITTER_ACCESS_TOKEN_SECRET"]
     indicoio.config.api_key = config["INDICO_API_KEY"]
 except KeyError as e:
     print(f"Error! Missing {str(e)}")
@@ -31,7 +33,7 @@ except KeyError as e:
 
 if filter_bad_words:
     try:
-        with open("helpers/bad_words.txt") as f:
+        with open("helpers/bad-words.txt", "r") as f:
             bad_words_list = f.read().splitlines()
     except:
         print("Missing bad words file. Add back helpers/bad_words.txt and restart.")
@@ -46,20 +48,20 @@ api = tweepy.API(auth)
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.mixer.init()
 
-# Get what system we're on to determine how to handle TTS
-current_system = sys.platform
-if current_system == "win32":
-    def speak(sentence):
-        os.system(f'powershell .\\scripts\\speak.ps1 "{sentence}"')
-elif current_system == "darwin" or current_system == "linux":
-    def speak(sentence):
-        os.system(f'say "{sentence}"')
-else:
-    print("OS not recognized. Unable to speak.")
-    sys.exit()
+# Start the TTS engine process
+
+engine_process = Popen(["python", "helpers/ttsengine.py"], stdin=PIPE)
 
 
-# This is the listener, resposible for receiving data
+def speak(sentence):
+    engine_process.stdin.write(f"{sentence}\n".encode())
+    engine_process.stdin.flush()
+
+
+speak("Starting Birdsong!")
+
+
+# This is the listener, responsible for receiving data
 class StdOutListener(tweepy.StreamListener):
     def on_data(self, data):
 
@@ -104,59 +106,43 @@ class StdOutListener(tweepy.StreamListener):
                 "@birdsongbot", "").replace("\"", "").replace("\'", "").split('\n')
 
             # INDICO SENTIMENT JAZZ
-            sentimentVal1 = indicoio.sentiment(tweet_text_array[0])
-            sentimentVal1 = int(sentimentVal1 * 5)
 
-            sentimentVal2 = indicoio.sentiment(tweet_text_array[1])
-            sentimentVal2 = int(sentimentVal2 * 5)
+            sentiments = indicoio.sentiment(tweet_text_array)
+            sentiments = tuple(map(lambda x: int(x * 5), sentiments))
 
-            sentimentVal3 = indicoio.sentiment(tweet_text_array[2])
-            sentimentVal3 = int(sentimentVal3 * 5)
-
-            fileNames = musicpicker.get_music_names(
-                sentimentVal1, sentimentVal2, sentimentVal3)
+            fileNames = musicpicker.get_music_names(sentiments)
             print(f"Playing {fileNames}")
 
-            # Load and play the music for line 1
-            pygame.mixer.music.load("sounds/{0}.wav".format(fileNames[0]))
-            pygame.mixer.music.play()
+            for i in range(3):
+                # Load and play the music
+                pygame.mixer.music.load(f"sounds/{fileNames[i]}.wav")
+                pygame.mixer.music.play()
+                # Reading the Haiku line with macs sweet sweet voice
+                speak(tweet_text_array[i])
+                time.sleep(1)
 
-            # Reading Haiku line 1 with macs sweet sweet voice
-            speak(tweet_text_array[0])
-            print()
-
-            time.sleep(1)
-
-            # Load and play the music for line 2
-            pygame.mixer.music.load("sounds/{0}.wav".format(fileNames[1]))
-            pygame.mixer.music.play()
-
-            # Reading Haiku line 2 with macs sweet sweet voice
-            speak(tweet_text_array[1])
-            print()
-
-            time.sleep(1)
-
-            # Load and play the music for line 3
-            pygame.mixer.music.load("sounds/{0}.wav".format(fileNames[2]))
-            pygame.mixer.music.play()
-
-            # Reading Haiku line 3 with macs sweet sweet voice
-            speak(tweet_text_array[2])
-            print()
             time.sleep(3)
-
         return True
 
     def on_error(self, status):
         print(status)
 
 
+def exit_handler(signum, frame):
+    print("Exiting Birdsong")
+    stream.disconnect()
+    engine_process.kill()
+    sys.exit(0)
+
+
 if __name__ == '__main__':
     listener = StdOutListener()
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
-
-    print(f"Showing all new tweets for @{bot_username}:")
+    print(f"Listening at @{bot_username}:")
+    signal.signal(signal.SIGINT, exit_handler)
+    print('Press Ctrl+C to stop the bot on next keep-alive (within 15ish seconds)')
+    print('ONLY exit the bot via Ctrl+C to properly close the stream and TTS engine.')
+    print('Otherwise you may have orphaned processes floating around.')
     stream = tweepy.Stream(auth, listener)
     stream.filter(track=[f'@{bot_username}'])
