@@ -9,6 +9,32 @@ import signal
 from subprocess import Popen, PIPE
 from helpers import musicpicker, syllables
 import configparser
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Setup logger
+log_formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - %(message)s')
+
+logFile = 'logs/app.log'
+
+file_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024,
+                                   backupCount=1, encoding=None, delay=0)
+file_handler.setFormatter(log_formatter)
+file_handler.setLevel(logging.INFO)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+
+log = logging.getLogger('root')
+log.setLevel(logging.INFO)
+
+log.addHandler(file_handler)
+log.addHandler(stream_handler)
+
+log.info("Begin logging...")
+
+# Read config variables
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -27,8 +53,8 @@ try:
     access_token_secret = config["TWITTER_ACCESS_TOKEN_SECRET"]
     indicoio.config.api_key = config["INDICO_API_KEY"]
 except KeyError as e:
-    print(f"Error! Missing {str(e)}")
-    print("Have you added your API keys to config.ini?")
+    log.error(f"Error! Missing {str(e)}")
+    log.error("Have you added your API keys to config.ini?")
     sys.exit()
 
 if filter_bad_words:
@@ -36,7 +62,8 @@ if filter_bad_words:
         with open("helpers/bad-words.txt", "r") as f:
             bad_words_list = f.read().splitlines()
     except:
-        print("Missing bad words file. Add back helpers/bad_words.txt and restart.")
+        log.error(
+            "Missing bad words file. Add back helpers/bad_words.txt and restart.")
         sys.exit()
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -54,6 +81,7 @@ engine_process = Popen(["python", "helpers/ttsengine.py"], stdin=PIPE)
 
 
 def speak(sentence):
+    log.info(sentence)
     engine_process.stdin.write(f"{sentence}\n".encode())
     engine_process.stdin.flush()
 
@@ -76,9 +104,9 @@ class StdOutListener(tweepy.StreamListener):
 
         if filter_bad_words and any(word in bad_words_list for word in tweet_haiku.split()):
             # Someone sent a haiku with a bad word in it!!
-            print("Received inappropriate haiku")
-            print(tweet_haiku)
-            print("Skipping")
+            log.info("Received inappropriate haiku")
+            log.info(tweet_haiku)
+            log.info("Skipping")
             return True
 
         is_haiku = syllables.is_haiku(tweet_haiku)
@@ -129,7 +157,7 @@ class StdOutListener(tweepy.StreamListener):
 
 
 def exit_handler(signum, frame):
-    print("Exiting Birdsong")
+    log.info("Exiting Birdsong")
     stream.disconnect()
     engine_process.kill()
     sys.exit(0)
@@ -139,7 +167,7 @@ if __name__ == '__main__':
     listener = StdOutListener()
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
-    print(f"Listening at @{bot_username}:")
+    log.info(f"Listening at @{bot_username}:")
     signal.signal(signal.SIGINT, exit_handler)
     print('Press Ctrl+C to stop the bot on next keep-alive (within 15ish seconds)')
     print('ONLY exit the bot via Ctrl+C to properly close the stream and TTS engine.')

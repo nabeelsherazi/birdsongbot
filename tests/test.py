@@ -30,7 +30,7 @@ if __name__ == '__main__':
     l1_test = int(input('l1sent = '))
     l2_test = int(input('l2sent = '))
     l3_test = int(input('l3sent = '))
-    print(musicpicker.get_music_names(l1_test, l2_test, l3_test))
+    print(musicpicker.get_music_names((l1_test, l2_test, l3_test))
     input()
 
     print("All tests passed.")
