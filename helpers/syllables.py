@@ -30,29 +30,13 @@ def is_haiku(string):
     p1_sum = p2_sum = p3_sum = 0
     for wd in haiku[0].strip().split():
         p1_sum += get_syllables(wd)
-    print(p1_sum)
+    print(f"First line: {p1_sum} syllables")
     for wd in haiku[1].strip().split():
         p2_sum += get_syllables(wd)
-    print(p2_sum)
+    print(f"Second line: {p2_sum} syllables")
     for wd in haiku[2].strip().split():
         p3_sum += get_syllables(wd)
-    print(p3_sum)
+    print(f"Third line: {p3_sum} syllables")
     if p1_sum == 5 and p2_sum == 7 and p3_sum == 5:
         return True
     return False
-
-
-if __name__ == '__main__':
-    assert get_syllables('eat') == 1
-    assert get_syllables('refrigerator') == 5
-    assert get_syllables('bicycle') == 3
-    assert get_syllables('alimony') == 4
-    assert get_syllables('read') == 1
-    assert get_syllables('oolong') == 2
-    assert get_syllables('laboratory') == 5
-    assert get_syllables('every') == 3
-    assert get_syllables('dIffEreNt') == 3
-    assert get_syllables('&stra!nge.') == 1
-    is_haiku("Autumn moonlight\na worm digs silently\ninto the chestnut.") is True
-    print("All tests passed.")
-    input()
