@@ -1,6 +1,9 @@
 # Do not commit your API keys!!!!
 config.ini
 
+# Database folder
+db/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
