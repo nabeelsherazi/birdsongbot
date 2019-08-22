@@ -14,6 +14,14 @@ _A sweet tweetbot built at [HackBeanpot 2017](https://hackbeanpot.com) by [Nabee
 
 We dreamed up Birdsong as a collaborative art experience, with a vision to connect people through poetry. Twitter is a medium that allows people from all around the world to talk to each other, but it falls short of real human connection. We wanted to bridge this gap by creating a bot that would give friends on the internet a real voice -- through poetry. When installed, people could gather around Birdsong and hear poetry sent to them from around the world. Together, we're art.
 
+## Features
+
+* Cross-platform (Windows, Mac, Linux) thanks to PyTTSx3
+* Easy to setup
+* Customizable via config.ini
+* Spam filter and abuse filter built in
+* Cool as heck!!
+
 ## How to use
 
 Create a [Twitter](https://twitter.com) account, and open the Twitter Developer console. Obtain a consumer key, consumer secret, access token, and access token secret. Add these keys, and the username of the Twitter account you created, into the config.ini file.
@@ -28,4 +36,4 @@ You should now be all set! Start the bot with `python start.py`. Happy Haikuing!
 
 We'd like to thank the HackBeanpot team for putting on such a great event, Genuine and Indico for letting us play in their place (and the nice prizes!).
 
-Thanks is also given to AbigailB on [StackOverflow](https://stackoverflow.com/questions/14541303/count-the-number-of-syllables-in-a-word) for her neat syllable counting function, and Luis von Ahn at Carnegie Mellon University for his [list of bad words](https://www.cs.cmu.edu/~biglou/resources/).
+Thanks is also given to [AbigailB on StackOverflow](https://stackoverflow.com/questions/14541303/count-the-number-of-syllables-in-a-word) for her neat syllable counting function, and [Luis von Ahn at Carnegie Mellon University](https://www.cs.cmu.edu/~biglou/resources/) for his list of bad words.
