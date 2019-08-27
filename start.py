@@ -49,7 +49,8 @@ log_formatter = logging.Formatter(
 
 logFile = 'logs/app.log'
 
-file_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024,
+os.makedirs("logs", exist_ok=True)
+file_handler = RotatingFileHandler(logFile, mode='a+', maxBytes=5*1024*1024,
                                    backupCount=1, encoding=None, delay=0)
 file_handler.setFormatter(log_formatter)
 file_handler.setLevel(logging.INFO)
